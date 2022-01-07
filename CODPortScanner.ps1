@@ -54,6 +54,7 @@ $OutputFile = "$logpath\PortScanner.log"
 $StartTime = (Get-Date)
 
 # Adjust Ports as needed
+#$portrange = 22..23
 $portrange = 1..65535
 
 # Slow Nets or WANs, might need to increase
