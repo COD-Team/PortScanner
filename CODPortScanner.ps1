@@ -2,32 +2,35 @@
     .DESCRIPTION
         MyPortScanner will scan all ports for all IP addresses in your subnet. 
         Looking for Unauthorized Devices, Ports and Protocols in an environment. 
-
-    .OUTPUTS
-        Report found under $logPath below
-    
-    .EXAMPLE
-        Option 1
-        1. Command Prompt (Admin) "powershell -Executionpolicy Bypass -File PATH\FILENAME.ps1"
-
-    .NOTES
-        Author Perk
-        Last Update 1/2/22
-    
-        Powershell 5.1 or higher
-        Run as Administrator
-
         Tested Nets Time based on 65535 (MAX) ports
             /24 approx 4 hours
             /22 approx 16 hours
+
+    .OUTPUTS
+        Report found under $logPath below, default is c:\COD-Logs\COMPUTERNAME\DATETIME
+    
+    .EXAMPLE
+        1. PowerShell 5.1 Command Prompt (Admin) 
+            "powershell -Executionpolicy Bypass -File PATH\FILENAME.ps1"
+        2. Powershell 7.2.1 Command Prompt (Admin) 
+            "pwsh -Executionpolicy Bypass -File PATH\FILENAME.ps1"
+
+    .NOTES
+        Author Perkins
+        Last Update 1/7/22
+        Updated 1/7/22 Tested and Validated PowerShell 5.1 and 7.2.1
+    
+        Powershell 5 or higher
+        Run as Administrator
     
     .FUNCTIONALITY
         PowerShell Language
+        Active Directory
     
     .Link
-    https://github.com/COD-Team
-    YouTube Channel https://www.youtube.com/channel/UCWtXSYvBXU6YqzqBqNcH_Kw 
-
+        https://github.com/COD-Team
+        YouTube Video https://youtu.be/4LSMP0gj1IQ
+        
     KimConnect did a great job creating Script to execute based on your subnet without input.
     Modified for my requirements. See notes below. 
     https://kimconnect.com/powershell-scan-a-subnet-for-used-and-unused-ips/
@@ -49,12 +52,14 @@ $logpath = "C:\COD-Logs\$ComputerName\$(get-date -format "yyyyMMdd-hhmmss")"
           New-Item -ItemType Directory -Force -Path $logpath
     }
 
+# Added 1/7/21 PowerShell 7.2.1 Compatibility for Out-File not printing escape characters
+if ($PSVersionTable.PSVersion.major -ge 7) {$PSStyle.OutputRendering = 'PlainText'}
+
 # Logfile where all the results are dumped
 $OutputFile = "$logpath\PortScanner.log"
 $StartTime = (Get-Date)
 
 # Adjust Ports as needed
-#$portrange = 22..23
 $portrange = 1..65535
 
 # Slow Nets or WANs, might need to increase
@@ -69,7 +74,7 @@ $simultaneousJobs = 8
 
 # Start KimConnect Section - Produces IP Addresses for current subnet. Use $allIps
 $cidrBlock=$(
-    $interfaceIndex=(Get-WmiObject -Class Win32_IP4RouteTable | Where-Object { $_.destination -eq '0.0.0.0' -and $_.mask -eq '0.0.0.0'} |  Sort-Object metric1).interfaceindex;
+    $interfaceIndex=(Get-CimInstance  -Class Win32_IP4RouteTable | Where-Object { $_.destination -eq '0.0.0.0' -and $_.mask -eq '0.0.0.0'} |  Sort-Object metric1).interfaceindex;
     $interfaceObject=(Get-NetIPAddress -InterfaceIndex $interfaceIndex -AddressFamily ipv4 | Select-object IPAddress,PrefixLength)[0];
     "$($interfaceObject.IPAddress)/$($interfaceObject.PrefixLength)"
 ) 
